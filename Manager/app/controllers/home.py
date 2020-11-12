@@ -2,8 +2,7 @@ from flask import Blueprint, render_template
 from flask import request, flash, redirect, url_for
 import boto3
 from datetime import timedelta, datetime
-
-from app import cw
+from operator import itemgetter
 
 
 bp = Blueprint('home', __name__, template_folder='../templates')
@@ -31,10 +30,10 @@ def worker_destroy(id):
     return redirect(url_for('home.root'))
 
 
-# @bp.route('/manager', methods=['GET', 'POST'])
-# def manager():
+@bp.route('/manager', methods=['GET', 'POST'])
+def manager():
     
-#     return render_template('manager.html')
+    return render_template('manager.html')
 
 
 
@@ -47,7 +46,7 @@ def get_num_workers():
         MetricName = 'NumWorkers',
         Namespace = 'AWS/EC2',
         Statistics = ['Average'],
-        Dimensions = [{'Name': 'InstanceId', 'Value': 'i-03a0d1e856d0e7a8b'}]
+        Dimensions = [{'Name': 'InstanceId', 'Value': 'i-0ef4896d3ab639d73'}]
     )
     return processing_data(workers, 'Average')
 

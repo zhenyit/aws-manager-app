@@ -1,163 +1,124 @@
-<!DOCTYPE html>
-<html lang="en" class="fixed">
-<head>
-    <!-- Basic -->
-    <meta charset="UTF-8">
+<!doctype html>
+<html class="fixed">
+	<head>
 
-    <title>Admin</title>
-    <meta name="keywords" content="HTML5 Admin Template" />
-    <meta name="description" content="JSOFT Admin - Responsive HTML5 Template">
-    
+		<!-- Basic -->
+		<meta charset="UTF-8">
 
-    <!-- Mobile Metas -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Admin</title>
+		<meta name="keywords" content="HTML5 Admin Template" />
+		<meta name="description" content="JSOFT Admin - Responsive HTML5 Template">
+		
 
-    <!-- Web Fonts  -->
-    <link href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
+		<!-- Mobile Metas -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- Vendor CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/font-awesome/css/font-awesome.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/magnific-popup/magnific-popup.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap-datepicker/css/datepicker3.css') }}" />
+		<!-- Web Fonts  -->
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
 
-    <!-- Specific Page Vendor CSS -->
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/jquery-ui/css/ui-lightness/jquery-ui-1.10.4.custom.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap-multiselect/bootstrap-multiselect.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/morris/morris.css') }}" /> -->
+		<!-- Vendor CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/font-awesome/css/font-awesome.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/magnific-popup/magnific-popup.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap-datepicker/css/datepicker3.css') }}" />
 
-    <!-- Theme CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" />
+		<!-- Specific Page Vendor CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/jquery-ui/css/ui-lightness/jquery-ui-1.10.4.custom.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/bootstrap-multiselect/bootstrap-multiselect.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/morris/morris.css') }}" />
 
-    <script src="{{ url_for('static', filename='assets/vendor/modernizr/modernizr.js') }}"></script>
+		<!-- Theme CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/theme.css') }}" />
 
-    {% block head %}
-    {% endblock %}
-</head>
-<body>
-    <section class="body">
+		<!-- Skin CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/skins/default.css') }}" />
+		
+		<!-- Head Libs -->
+		<script src="{{ url_for('static', filename='assets/vendor/modernizr/modernizr.js') }}"></script>
+	
 
-        <!-- start: header -->
-        <header class="header">
-            <div class="logo-container">
-                <a href="../" class="logo">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" height="35" alt="JSOFT Admin" />
-                </a>
-            </div>
-        </header>
-        <!-- end: header -->
+		{% block head %}
+		{% endblock %}
+	</head>
 
-        <div class="inner-wrapper">
-            <!-- start: sidebar -->
-            <aside id="sidebar-left" class="sidebar-left">
-            
-                <div class="sidebar-header">
-                    <!-- <div class="sidebar-title">
-                        Manager
-                    </div> -->
-                    <div class="sidebar-toggle hidden-xs" data-toggle-class="sidebar-left-collapsed" data-target="html" data-fire-event="sidebar-left-toggle">
-                        <i class="fa fa-bars" aria-label="Toggle sidebar"></i>
-                    </div>
-                </div>
-            
-                <div class="nano">
-                    <div class="nano-content">
-                        <nav id="menu" class="nav-main" role="navigation">
-                            <ul class="nav nav-main">
-                                <li class="nav-active">
-                                    <a href="{{ url_for('home.root') }}">
-                                        <i class="fa fa-home" aria-hidden="true"></i>
-                                        <span>Dashboard</span>
-                                    </a>
-                                </li>
+	
+	<body>
+		<section class="body">
 
-                                <li>
-                                    <a href="{{ url_for('home.manager') }}">
-                                        <i class="fa fa-tasks" aria-hidden="true"></i>
-                                        <span>Management</span>
-                                    </a>
-                                </li>
-                            
-                            </ul>
-                        </nav>
-            
-                    </div>
-            
-                </div>
-            
-            </aside>
-            <!-- end: sidebar -->
+			<!-- start: header -->
+			<header class="header">
+				<div class="logo-container">
+					<a href="../" class="logo">
+						<img src="{{ url_for('static', filename='assets/images/logo.png') }}" height="35" alt="JSOFT Admin" />
+					</a>
+				</div>
+			</header>
+			<!-- end: header -->
 
-            <section role="main" class="content-body">
-                <header class="page-header">
-                    <h2>Manager</h2>
-                
-                    <!-- <div class="right-wrapper pull-right">
-                        <ol class="breadcrumbs">
-                            <li>
-                                <a href="index.html">
-                                    <i class="fa fa-home"></i>
-                                </a>
-                            </li>
-                            <li><span>Dashboard</span></li>
-                        </ol>
-                
-                        <a class="sidebar-right-toggle" data-open="sidebar-right"><i class="fa fa-chevron-left"></i></a>
-                    </div> -->
-                </header>
+			<div class="inner-wrapper">
+				<!-- start: sidebar -->
+				<aside id="sidebar-left" class="sidebar-left">
+				
+					<div class="sidebar-header">
+						<!-- <div class="sidebar-title">
+							Manager
+						</div> -->
+						<div class="sidebar-toggle hidden-xs" data-toggle-class="sidebar-left-collapsed" data-target="html" data-fire-event="sidebar-left-toggle">
+							<i class="fa fa-bars" aria-label="Toggle sidebar"></i>
+						</div>
+					</div>
+				
+					<div class="nano">
+						<div class="nano-content">
+							<nav id="menu" class="nav-main" role="navigation">
+								<ul class="nav nav-main">
+									<li class="nav-active">
+										<a href="{{ url_for('home.root') }}">
+											<i class="fa fa-home" aria-hidden="true"></i>
+											<span>Dashboard</span>
+										</a>
+									</li>
+	
+									<li>
+										<a href="{{ url_for('home.manager') }}">
+											<i class="fa fa-tasks" aria-hidden="true"></i>
+											<span>Management</span>
+										</a>
+									</li>
+								
+								</ul>
+							</nav>
+				
+						</div>
+				
+					</div>
+				
+				</aside>
+				<!-- end: sidebar -->
+	
+				<section role="main" class="content-body">
+					<header class="page-header">
+						<h2>Manager</h2>
+					</header>
 
-                 
+					
+					{% block body %}
+					{% endblock %}
 
-    <!-- Vendor -->
-    <!-- <script src="{{ url_for('static', filename='assets/vendor/jquery/jquery.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-browser-mobile/jquery.browser.mobile.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/nanoscroller/nanoscroller.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/magnific-popup/magnific-popup.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-placeholder/jquery.placeholder.js') }} "></script> -->
+				</section>
+			</div>  
 
-    
-    <!-- Specific Page Vendor -->
-    <!-- <script src="{{ url_for('static', filename='assets/vendor/jquery-ui/js/jquery-ui-1.10.4.custom.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-ui-touch-punch/jquery.ui.touch-punch.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-appear/jquery.appear.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/bootstrap-multiselect/bootstrap-multiselect.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-easypiechart/jquery.easypiechart.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/flot/jquery.flot.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/flot-tooltip/jquery.flot.tooltip.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/flot/jquery.flot.pie.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/flot/jquery.flot.categories.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/flot/jquery.flot.resize.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jquery-sparkline/jquery.sparkline.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/raphael/raphael.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/morris/morris.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/gauge/gauge.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/snap-svg/snap.svg.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/liquid-meter/liquid.meter.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/jquery.vmap.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/data/jquery.vmap.sampledata.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/jquery.vmap.world.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.africa.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.asia.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.australia.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.europe.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.north-america.js') }} "></script>
-    <script src="{{ url_for('static', filename='assets/vendor/jqvmap/maps/continents/jquery.vmap.south-america.js') }} "></script> -->
+		</section>
 
-    
-    <!-- Theme Base, Components and Settings -->
-    <script src="{{ url_for('static', filename='js/theme.js') }} "></script>
-    
-    
-    <!-- Theme Initialization Files -->
-    <script src="{{ url_for('static', filename='js/theme.init.js') }}"></script>
+		<!-- Vendor -->
+		<script src="{{ url_for('static', filename='assets/vendor/jquery/jquery.js') }}"></script>
+		<script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.js') }}"></script>
+		<script src="{{ url_for('static', filename='assets/vendor/nanoscroller/nanoscroller.js') }}"></script>
+
+		<!-- Theme Base, Components and Settings -->
+		<script src="{{ url_for('static', filename='assets/js/theme.js') }}"></script>
 
 
-    <!-- Examples -->
-    <script src="{{ url_for('static', filename='js/dashboard/examples.dashboard.js') }}"></script>
-    
-    {% block body %}
-    {% endblock %}
-</body>
+		
+	</body>
 </html>
