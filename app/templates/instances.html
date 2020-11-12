@@ -1,0 +1,70 @@
+{% extends 'navbar.html' %}
+
+{% set active_page = 'instances' %}
+
+{% block content %}
+    <div style="text-align: right; margin: 10px 30px">
+        <div class="btn-group">
+            <button class="btn btn-outline-dark dropdown-toggle" type="button" id="stateMenuButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Instance state
+            </button>
+            <div class="dropdown-menu" aria-labelledby="stateMenuButton">
+                <a class="dropdown-item" href="#">Stop instance</a>
+                <a class="dropdown-item" href="#">Start instance</a>
+                <a class="dropdown-item" href="#">Destroy instance</a>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-dark dropdown-toggle" type="button" id="actionMenuButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="#">View details</a>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" type="button">
+                Launch instances
+            </button>
+        </div>
+    </div>
+
+
+
+
+    <div class="d-flex justify-content-center align-items-center">
+        <div style="text-align: center">
+            <table class="table" id="instancesTable" style="text-align: left">
+                <thead>
+                <th>-</th>
+                <th>Name</th>
+                <th>Instance ID</th>
+                <th>Instance state</th>
+                <th>Instance type</th>
+                <th>Availability Zone</th>
+                <th>Public IPv4 address</th>
+                </thead>
+                <tbody>
+                {% for instance in instances %}
+                    <tr>
+                        <td>
+                            <div>
+                                <input type="checkbox">
+                            </div>
+                        </td>
+                        <td>{{ instance.tags[0].Value }}</td>
+                        <td><a href="google.com">{{ instance.id }}</a></td>
+                        <td>{{ instance.state['Name'] }}</td>
+                        <td>{{ instance.instance_type }}</td>
+                        <td>{{ instance.placement['AvailabilityZone'] }}</td>
+                        <td>{{ instance.public_ip_address }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
