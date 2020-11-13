@@ -38,18 +38,18 @@
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
                     <a class="nav-link"
-                            {% if active_page=='instances' %} style="color: rgba(0,0,0,.9)" {% endif %}
-                       href="{{ url_for('manager.get_instances') }}"
+                            {% if active_page=='workers' %} style="color: rgba(0,0,0,.9)" {% endif %}
+                       href="{{ url_for('worker.get_workers') }}"
                     >
-                        Instances
+                        Workers
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link"
-                            {% if active_page=='load balancer' %} style="color: rgba(0,0,0,.9)" {% endif %}
+                            {% if active_page=='instances' %} style="color: rgba(0,0,0,.9)" {% endif %}
                        href="{{ url_for('manager.get_instances') }}"
                     >
-                        Load Balancing
+                        All Instances
                     </a>
                 </li>
                 <li class="nav-item">
