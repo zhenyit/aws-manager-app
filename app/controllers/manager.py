@@ -13,7 +13,7 @@ MANAGER_ID = 'i-0602079726c614e16'
 def get_instances():
     ec2 = boto3.resource('ec2')
     instances = ec2.instances.all()
-    return render_template("instances.html", title="EC2 Instances", instances=instances)
+    return render_template("instances.html", title="EC2 Manager", instances=instances)
 
 
 @bp.route('/get_details/<id>', methods=['GET'])

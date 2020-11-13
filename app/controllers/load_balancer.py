@@ -4,19 +4,10 @@ import boto3
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-bp = Blueprint('worker', __name__, template_folder='../templates')
+bp = Blueprint('load_balancer', __name__, template_folder='../templates')
 
 MAXIMUN_WORKER_POOL_SIZE = 8
 MINIMUM_WORKER_POOL_SIZE = 1
-
-
-@bp.route('/test', methods=['GET'])
-def test():
-    StartTime = datetime.utcnow() - timedelta(seconds=30 * 60)
-    EndTime = datetime.utcnow()
-    print(StartTime)
-    print(EndTime)
-    return "success"
 
 
 @bp.route('/', methods=['GET'])
@@ -32,7 +23,7 @@ def get_workers():
 
     worker_stats = get_worker_num_graph(cw_client)
 
-    return render_template("workers.html", title="EC2 Instances",
+    return render_template("load_balancer.html", title="EC2 Manager",
                            dns_name=dns_name, dns_url=dns_url,
                            worker_instances=worker_instances, worker_stats = worker_stats,
                            max_pool_size=MAXIMUN_WORKER_POOL_SIZE,
@@ -43,7 +34,6 @@ def get_workers():
 def get_elb_dns(elb_client):
     elbs = elb_client.describe_load_balancers()['LoadBalancers']
     dns_name = elbs[0]['DNSName']
-
     return dns_name
 
 

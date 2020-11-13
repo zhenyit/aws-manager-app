@@ -38,10 +38,18 @@
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
                     <a class="nav-link"
-                            {% if active_page=='workers' %} style="color: rgba(0,0,0,.9)" {% endif %}
-                       href="{{ url_for('worker.get_workers') }}"
+                            {% if active_page=='load balancer' %} style="color: rgba(0,0,0,.9)" {% endif %}
+                       href="{{ url_for('load_balancer.get_workers') }}"
                     >
-                        Workers
+                        Load Balancer
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link"
+                            {% if active_page=='auto scaling' %} style="color: rgba(0,0,0,.9)" {% endif %}
+                       href="{{ url_for('auto_scaling.load_current_policy') }}"
+                    >
+                        Auto Scaling
                     </a>
                 </li>
                 <li class="nav-item">
@@ -52,14 +60,7 @@
                         All Instances
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link"
-                            {% if active_page=='auto scaling' %} style="color: rgba(0,0,0,.9)" {% endif %}
-                       href="{{ url_for('manager.get_instances') }}"
-                    >
-                        Auto Scaling
-                    </a>
-                </li>
+
             </ul>
         </div>
 

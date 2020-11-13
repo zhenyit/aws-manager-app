@@ -1,6 +1,6 @@
 {% extends 'navbar.html' %}
 
-{% set active_page = 'workers' %}
+{% set active_page = 'load balancer' %}
 
 {% block graph_script %}
     <script type="text/javascript" src="{{ url_for('static', filename='flot/jquery.js') }}"></script>
@@ -27,13 +27,13 @@
             </div>
             <div class="row">
                 <div style="margin: 5px 0">
-                    <form action="{{ url_for('worker.shrink_pool') }}" method="post">
+                    <form action="{{ url_for('load_balancer.shrink_pool') }}" method="post">
                         <input type="submit" class="btn btn-outline-primary" value="Shrink worker pool">
                     </form>
                 </div>
 
                 <div style="margin: 5px 5px">
-                    <form action="{{ url_for('worker.expand_pool') }}" method="post">
+                    <form action="{{ url_for('load_balancer.expand_pool') }}" method="post">
                         <input type="submit" class="btn btn-outline-primary" value="Expand worker pool">
                     </form>
                 </div>
@@ -41,7 +41,7 @@
 
 
             <div class="row">
-                <form action="{{ url_for('worker.add_worker') }}" method="post">
+                <form action="{{ url_for('load_balancer.add_worker') }}" method="post">
                     <input type="submit" class="btn btn-outline-primary" value="Add a worker">
                 </form>
             </div>
