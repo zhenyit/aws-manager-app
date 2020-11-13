@@ -7,6 +7,7 @@ from operator import itemgetter
 
 bp = Blueprint('manager', __name__, template_folder='../templates')
 
+MANAGER_ID = 'i-0602079726c614e16'
 
 @bp.route('/instances', methods=['GET'])
 def get_instances():
@@ -109,11 +110,35 @@ def destroy_instance(id):
     return redirect(url_for('get_instances'))
 
 
-@bp.route('/launch_instance', methods=['POST'])
-def launch_instance():
-    ec2 = boto3.resource('ec2')
-    ec2.create_instances(LaunchTemplate={'LaunchTemplateId': 'lt-0331e69509ec8b60c'}, MinCount=1, MaxCount=1)
-    return redirect(url_for('manager.get_instances'))
+@bp.route('/stop_manager', methods=['POST'])
+def stop_manager():
+    # Terminate all workers
+    elb_client = boto3.client('elbv2')
+    ec2_client = boto3.client('ec2')
+    target_groups = elb_client.describe_target_groups()['TargetGroups']
+    target_group_arn = target_groups[0]['TargetGroupArn']
+
+    # Get target group instance list
+    targets = elb_client.describe_target_health(TargetGroupArn=target_group_arn)['TargetHealthDescriptions']
+
+    for target in targets:
+        instance_id = target['Target']['Id']
+        elb_client.deregister_targets(
+            TargetGroupArn=target_group_arn,
+            Targets=[
+                {
+                    'Id': instance_id,
+                    'Port': 5000
+                },
+            ]
+        )
+        ec2 = boto3.resource('ec2')
+        ec2.instances.filter(InstanceIds=[instance_id]).terminate()
+
+    # Stop Manager
+    # ec2_client.stop_instances(InstanceIds=[MANAGER_ID], DryRun=True)
+    return "GoodBye"
+
 
 # @bp.route('/create', methods=['POST'])
 # def ec2_create():

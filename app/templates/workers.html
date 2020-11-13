@@ -2,13 +2,61 @@
 
 {% set active_page = 'workers' %}
 
+{% block graph_script %}
+    <script type="text/javascript" src="{{ url_for('static', filename='flot/jquery.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='flot/jquery.flot.js') }}"></script>
+{% endblock %}
+
 {% block content %}
-<h2 style="align-content: center">Worker list</h2>
-<div class="d-flex justify-content-center align-items-center">
-        <div style="text-align: center">
+    <div class="row" style="margin: 20px 30px">
+        <div class="col">
+
+            <div class="row">
+                <label>Load Balancer DNS name:</label>
+                <a href={{ dns_url }} target="_blank">{{ dns_name }}</a>
+            </div>
+
+            <div class="row">
+                <label>Maximum worker pool size: </label>
+                <span>{{ max_pool_size }}</span>
+            </div>
+
+            <div class="row">
+                <label>Minimum worker pool size: </label>
+                <span>{{ min_pool_size }}</span>
+            </div>
+            <div class="row">
+                <div style="margin: 5px 0">
+                    <form action="{{ url_for('worker.shrink_pool') }}" method="post">
+                        <input type="submit" class="btn btn-outline-primary" value="Shrink worker pool">
+                    </form>
+                </div>
+
+                <div style="margin: 5px 5px">
+                    <form action="{{ url_for('worker.expand_pool') }}" method="post">
+                        <input type="submit" class="btn btn-outline-primary" value="Expand worker pool">
+                    </form>
+                </div>
+            </div>
+
+
+            <div class="row">
+                <form action="{{ url_for('worker.add_worker') }}" method="post">
+                    <input type="submit" class="btn btn-outline-primary" value="Add a worker">
+                </form>
+            </div>
+        </div>
+        <div class="col">
+            <h3>#Worker Graph</h3>
+            <div id="worker_plot" style="width:300px;height:150px"></div>
+        </div>
+    </div>
+
+    <h3 style="margin-left: 30px">Worker list</h3>
+    <div class="d-flex justify-content-center align-items-center" style="margin: 0 30px 20px 30px">
+        <div class="table-responsive" style="text-align: center">
             <table class="table" id="instancesTable" style="text-align: left">
                 <thead>
-                <th>Name</th>
                 <th>Instance ID</th>
                 <th>Instance state</th>
                 <th>Instance type</th>
@@ -18,23 +66,22 @@
                 <th></th>
                 </thead>
                 <tbody>
-                {% for instance in instances %}
+                {% for worker_instance in worker_instances %}
                     <tr>
-                        <td>{{ instance.tags[0].Value }}</td>
-                        <td>{{ instance.id }}</td>
-                        <td>{{ instance.state['Name'] }}</td>
-                        <td>{{ instance.instance_type }}</td>
-                        <td>{{ instance.placement['AvailabilityZone'] }}</td>
-                        <td>{{ instance.public_ip_address }}</td>
+                        <td>{{ worker_instance.id }}</td>
+                        <td>{{ worker_instance.state['Name'] }}</td>
+                        <td>{{ worker_instance.instance_type }}</td>
+                        <td>{{ worker_instance.placement['AvailabilityZone'] }}</td>
+                        <td>{{ worker_instance.public_ip_address }}</td>
                         <td>
-                            <form action="{{ url_for('manager.get_details',id=instance.id) }}" method='get'>
+                            <form action="{{ url_for('manager.get_details',id=worker_instance.id) }}" method='get'>
                                 <input type='submit' value='Details'/>
                             </form>
                         </td>
                         <td>
-                            <form action="{{ url_for('manager.destroy_instance',id=instance.id) }}" method='post'
+                            <form action="{{ url_for('worker.remove_worker',id=worker_instance.id) }}" method='post'
                                   onsubmit='return confirm("Are you sure?")'>
-                                <input type='submit' value='Destroy'/>
+                                <input type='submit' value='Remove'/>
                             </form>
                         </td>
                     </tr>
@@ -43,5 +90,19 @@
             </table>
         </div>
     </div>
+
+    <script>
+
+        var options = {
+            series: {
+                lines: {show: true},
+                points: {show: true}
+            }
+        };
+
+
+        $.plot($("#worker_plot"), [{{ worker_stats }}], options);
+
+    </script>
 
 {% endblock %}
