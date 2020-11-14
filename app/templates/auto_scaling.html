@@ -4,29 +4,52 @@
 
 {% block content %}
     <div style="margin: 20px 30px; width: 500px;">
-        <form>
-            <div class="form-group form-inline">
-                <label for="growing_threshold" style="width: 200px">CPU threshold(growing): </label>
-                <input type="text" class="form-control" id="growing_threshold">
+        <form action="{{ url_for('auto_scaling.update_policy') }}" method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.grow_threshold.label }}
+            {{ form.grow_threshold(placeholder="Threshold should between (0, 100)", class="form-control") }}
+            <br>
+            {{ form.shrink_threshold.label }}
+            {{ form.shrink_threshold(placeholder="Threshold should between (0, 100)", class="form-control") }}
+            <br>
+            {{ form.expand_ratio.label }}
+            {{ form.expand_ratio(placeholder="Expand ratio should between [1, 10]", class="form-control") }}
+            <br>
+            {{ form.shrink_ratio.label }}
+            {{ form.shrink_ratio(placeholder="Shrink ratio should between [0, 1]", class="form-control") }}
+            <br>
+            <div style="height:28px;margin-bottom:2px;font-size:14px;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div style="color: #c62928;max-width: 240px;line-height: 1;text-align: left">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
             </div>
-            <div class="form-group form-inline">
-                <label for="shrinking_threshold" style="width: 200px">CPU threshold(shrinking): </label>
-                <input type="text" class="form-control" id="shrinking_threshold">
-            </div>
-            <div class="form-group form-inline">
-                <label for="increase_rate " style="width: 200px">Increase rate: </label>
-                <input type="text" class="form-control" id="increase_rate ">
-            </div>
-            <div class="form-group form-inline">
-                <label for="decrease_rate" style="width: 200px">Decrease rate: </label>
-                <input type="text" class="form-control" id="decrease_rate">
-            </div>
-            <div class="form-group form-inline">
-                <input type="submit" class="btn btn-outline-primary" value="Update policy" style="width: 400px">
-
-            </div>
-
+            {{ form.submit(class_="btn btn-outline-success submit_btn") }}
         </form>
+        {#        <form>#}
+        {#            <div class="form-group form-inline">#}
+        {#                <label for="grow_threshold" style="width: 200px">CPU threshold(growing): </label>#}
+        {#                <input type="text" class="form-control" id="grow_threshold">#}
+        {#            </div>#}
+        {#            <div class="form-group form-inline">#}
+        {#                <label for="shrink_threshold" style="width: 200px">CPU threshold(shrinking): </label>#}
+        {#                <input type="text" class="form-control" id="shrink_threshold">#}
+        {#            </div>#}
+        {#            <div class="form-group form-inline">#}
+        {#                <label for="expand_ratio " style="width: 200px">Increase rate: </label>#}
+        {#                <input type="text" class="form-control" id="expand_ratio ">#}
+        {#            </div>#}
+        {#            <div class="form-group form-inline">#}
+        {#                <label for="shrink_ratio" style="width: 200px">Decrease rate: </label>#}
+        {#                <input type="text" class="form-control" id="shrink_ratio">#}
+        {#            </div>#}
+        {#            <div class="form-group form-inline">#}
+        {#                <input type="submit" class="btn btn-outline-primary" value="Update policy" style="width: 400px">#}
+        {#            </div>#}
+        {#        </form>#}
 
     </div>
 {% endblock %}

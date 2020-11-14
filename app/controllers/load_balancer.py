@@ -109,25 +109,6 @@ def expand_pool():
     return redirect(url_for('worker.get_workers'))
 
 
-@bp.route('/remove_worker/<id>', methods=['POST'])
-def remove_worker(id):
-    elb_client = boto3.client('elbv2')
-    target_groups = elb_client.describe_target_groups()['TargetGroups']
-    target_group_arn = target_groups[0]['TargetGroupArn']
-    elb_client.deregister_targets(
-        TargetGroupArn=target_group_arn,
-        Targets=[
-            {
-                'Id': id,
-                'Port': 5000
-            },
-        ]
-    )
-    ec2 = boto3.resource('ec2')
-    ec2.instances.filter(InstanceIds=[id]).terminate()
-    return redirect(url_for('worker.get_workers'))
-
-
 @bp.route('/add_worker', methods=['POST'])
 def add_worker():
     ec2_resource = boto3.resource('ec2')
@@ -151,4 +132,23 @@ def add_worker():
             },
         ]
     )
+    return redirect(url_for('worker.get_workers'))
+
+
+@bp.route('/remove_worker/<id>', methods=['POST'])
+def remove_worker(id):
+    elb_client = boto3.client('elbv2')
+    target_groups = elb_client.describe_target_groups()['TargetGroups']
+    target_group_arn = target_groups[0]['TargetGroupArn']
+    elb_client.deregister_targets(
+        TargetGroupArn=target_group_arn,
+        Targets=[
+            {
+                'Id': id,
+                'Port': 5000
+            },
+        ]
+    )
+    ec2 = boto3.resource('ec2')
+    ec2.instances.filter(InstanceIds=[id]).terminate()
     return redirect(url_for('worker.get_workers'))

@@ -47,7 +47,7 @@
                 <li class="nav-item">
                     <a class="nav-link"
                             {% if active_page=='auto scaling' %} style="color: rgba(0,0,0,.9)" {% endif %}
-                       href="{{ url_for('auto_scaling.load_current_policy') }}"
+                       href="{{ url_for('auto_scaling.update_policy') }}"
                     >
                         Auto Scaling
                     </a>

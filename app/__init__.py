@@ -1,7 +1,14 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 # Init Flask application object
 app = Flask(__name__)
+app.config.from_object('app.settings')
+
+# Init flask-sqlalchemy
+db = SQLAlchemy()
+db.app = app
+db.init_app(app)
 
 # Register all blueprints
 from .controllers import manager
