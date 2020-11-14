@@ -1,13 +1,18 @@
 from flask import Blueprint, render_template
 from flask import request, flash, redirect, url_for
 import boto3
+import os
 from datetime import datetime, timedelta
 from operator import itemgetter
 
 bp = Blueprint('load_balancer', __name__, template_folder='../templates')
 
-MAXIMUN_WORKER_POOL_SIZE = 8
-MINIMUM_WORKER_POOL_SIZE = 1
+MAXIMUN_WORKER_POOL_SIZE = os.getenv('MAXIMUN_WORKER_POOL_SIZE')
+MINIMUM_WORKER_POOL_SIZE = os.getenv('MINIMUM_WORKER_POOL_SIZE')
+LAUNCH_TEMPLATE_ID = os.getenv('LAUNCH_TEMPLATE_ID')
+LOAD_BALANCER = os.getenv('LOAD_BALANCER')
+TARGET_GROUP_ARN = os.getenv('TARGET_GROUP_ARN')
+TARGET_GROUP = os.getenv('TARGET_GROUP')
 
 
 @bp.route('/', methods=['GET'])
@@ -38,12 +43,8 @@ def get_elb_dns(elb_client):
 
 
 def get_worker_list(elb_client, ec2):
-    # Get target group ARN
-    target_groups = elb_client.describe_target_groups()['TargetGroups']
-    target_group_arn = target_groups[0]['TargetGroupArn']
-
     # Get target group instance list
-    targets = elb_client.describe_target_health(TargetGroupArn=target_group_arn)['TargetHealthDescriptions']
+    targets = elb_client.describe_target_health(TargetGroupArn=TARGET_GROUP_ARN)['TargetHealthDescriptions']
 
     instance_id_list = []
     if not targets:
@@ -61,30 +62,29 @@ def get_worker_num_graph(cw_client):
     metric_name = 'HealthyHostCount'
     namespace = 'AWS/ApplicationELB'
 
-    worker = cw_client.get_metric_statistics(
+    healthy_worker = cw_client.get_metric_statistics(
         Namespace=namespace,
         MetricName=metric_name,
         Dimensions=[
             {
                 'Name': 'LoadBalancer',
-                'Value': 'app/user-app-elb/4dca1eed08c3a83d'
+                'Value': LOAD_BALANCER
             },
             {
                 'Name': 'TargetGroup',
-                'Value': 'targetgroup/user-app-target-group/86d3de612c7d4741'
+                'Value': TARGET_GROUP
             }
         ],
         StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow(),
-        Period=30,
+        Period=60,
         Statistics=[statistic],
 
     )
 
     worker_stats = []
-    print(worker)
 
-    for point in worker['Datapoints']:
+    for point in healthy_worker['Datapoints']:
         hour = point['Timestamp'].hour
         minute = point['Timestamp'].minute
         time = hour + minute / 60
@@ -99,21 +99,21 @@ def get_worker_num_graph(cw_client):
 def shrink_pool():
     global MAXIMUN_WORKER_POOL_SIZE
     MAXIMUN_WORKER_POOL_SIZE -= 1
-    return redirect(url_for('worker.get_workers'))
+    return redirect(url_for('load_balancer.get_workers'))
 
 
 @bp.route('/expand_pool', methods=['POST'])
 def expand_pool():
     global MAXIMUN_WORKER_POOL_SIZE
     MAXIMUN_WORKER_POOL_SIZE += 1
-    return redirect(url_for('worker.get_workers'))
+    return redirect(url_for('load_balancer.get_workers'))
 
 
 @bp.route('/add_worker', methods=['POST'])
 def add_worker():
     ec2_resource = boto3.resource('ec2')
     # Launch a new user-app worker
-    new_instance = ec2_resource.create_instances(LaunchTemplate={'LaunchTemplateId': 'lt-0331e69509ec8b60c'},
+    new_instance = ec2_resource.create_instances(LaunchTemplate={'LaunchTemplateId': LAUNCH_TEMPLATE_ID},
                                                  MinCount=1, MaxCount=1)
     new_instance_id = new_instance[0].id
 
@@ -121,10 +121,9 @@ def add_worker():
     waiter = boto3.client('ec2').get_waiter('instance_running')
     waiter.wait(InstanceIds=[new_instance_id])
     elb_client = boto3.client('elbv2')
-    target_groups = elb_client.describe_target_groups()['TargetGroups']
-    target_group_arn = target_groups[0]['TargetGroupArn']
+
     elb_client.register_targets(
-        TargetGroupArn=target_group_arn,
+        TargetGroupArn=TARGET_GROUP_ARN,
         Targets=[
             {
                 'Id': new_instance_id,
@@ -132,16 +131,15 @@ def add_worker():
             },
         ]
     )
-    return redirect(url_for('worker.get_workers'))
+    return redirect(url_for('load_balancer.get_workers'))
 
 
 @bp.route('/remove_worker/<id>', methods=['POST'])
 def remove_worker(id):
     elb_client = boto3.client('elbv2')
-    target_groups = elb_client.describe_target_groups()['TargetGroups']
-    target_group_arn = target_groups[0]['TargetGroupArn']
+
     elb_client.deregister_targets(
-        TargetGroupArn=target_group_arn,
+        TargetGroupArn=TARGET_GROUP_ARN,
         Targets=[
             {
                 'Id': id,
@@ -151,4 +149,4 @@ def remove_worker(id):
     )
     ec2 = boto3.resource('ec2')
     ec2.instances.filter(InstanceIds=[id]).terminate()
-    return redirect(url_for('worker.get_workers'))
+    return redirect(url_for('load_balancer.get_workers'))

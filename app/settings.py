@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 AMI_ID = 'ami-e3f432f5'
 SUBNET_ID = 'Fill with your subnet Id'

@@ -1,13 +1,18 @@
 from flask import Blueprint, render_template
 from flask import request, flash, redirect, url_for
 import boto3
+import os
 from datetime import datetime, timedelta
 from operator import itemgetter
 
 
 bp = Blueprint('manager', __name__, template_folder='../templates')
 
-MANAGER_ID = 'i-0602079726c614e16'
+
+MANAGER_ID = os.getenv('MANAGER_ID')
+LOAD_BALANCER = os.getenv('LOAD_BALANCER')
+TARGET_GROUP = os.getenv('TARGET_GROUP')
+TARGET_GROUP_ARN = os.getenv('TARGET_GROUP_ARN')
 
 
 @bp.route('/instances', methods=['GET'])
@@ -23,85 +28,58 @@ def get_details(id):
 
     instance = ec2.Instance(id)
 
-    client = boto3.client('cloudwatch')
+    cw_client = boto3.client('cloudwatch')
 
-    metric_name = 'CPUUtilization'
-
-    #    CPUUtilization, NetworkIn, NetworkOut, NetworkPacketsIn,
-    #    NetworkPacketsOut, DiskWriteBytes, DiskReadBytes, DiskWriteOps,
-    #    DiskReadOps, CPUCreditBalance, CPUCreditUsage, StatusCheckFailed,
-    #    StatusCheckFailed_Instance, StatusCheckFailed_System
-
-    namespace = 'AWS/EC2'
-    statistic = 'Average'  # could be Sum,Maximum,Minimum,SampleCount,Average
-
-    cpu = client.get_metric_statistics(
-        Period=1 * 60,
-        StartTime=datetime.utcnow() - timedelta(seconds=60 * 60),
+    cpu = cw_client.get_metric_statistics(
+        Namespace='AWS/EC2',
+        MetricName='CPUUtilization',
+        Dimensions=[{'Name': 'InstanceId', 'Value': id}],
+        Statistics=['Average'],
+        StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
-        MetricName=metric_name,
-        Namespace=namespace,  # Unit='Percent',
-        Statistics=[statistic],
-        Dimensions=[{'Name': 'InstanceId', 'Value': id}]
+        Period=60
     )
 
     cpu_stats = []
-
     for point in cpu['Datapoints']:
         hour = point['Timestamp'].hour
         minute = point['Timestamp'].minute
         time = hour + minute / 60
         cpu_stats.append([time, point['Average']])
-
     cpu_stats = sorted(cpu_stats, key=itemgetter(0))
 
-    statistic = 'Sum'  # could be Sum,Maximum,Minimum,SampleCount,Average
-
-    network_in = client.get_metric_statistics(
-        Period=1 * 60,
-        StartTime=datetime.utcnow() - timedelta(seconds=60 * 60),
+    request_count = cw_client.get_metric_statistics(
+        Namespace='AWS/ApplicationELB',
+        MetricName='RequestCountPerTarget',
+        Dimensions=[
+            {
+                'Name': 'LoadBalancer',
+                'Value': LOAD_BALANCER
+            },
+            {
+                'Name': 'TargetGroup',
+                'Value': TARGET_GROUP
+            }
+        ],
+        Statistics=['Sum'],
+        StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
-        MetricName='NetworkIn',
-        Namespace=namespace,  # Unit='Percent',
-        Statistics=[statistic],
-        Dimensions=[{'Name': 'InstanceId', 'Value': id}]
+        Period=60
     )
 
-    net_in_stats = []
+    request_count_stats = []
 
-    for point in network_in['Datapoints']:
+    for point in request_count['Datapoints']:
         hour = point['Timestamp'].hour
         minute = point['Timestamp'].minute
         time = hour + minute / 60
-        net_in_stats.append([time, point['Sum']])
-
-    net_in_stats = sorted(net_in_stats, key=itemgetter(0))
-
-    network_out = client.get_metric_statistics(
-        Period=5 * 60,
-        StartTime=datetime.utcnow() - timedelta(seconds=60 * 60),
-        EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
-        MetricName='NetworkOut',
-        Namespace=namespace,  # Unit='Percent',
-        Statistics=[statistic],
-        Dimensions=[{'Name': 'InstanceId', 'Value': id}]
-    )
-
-    net_out_stats = []
-
-    for point in network_out['Datapoints']:
-        hour = point['Timestamp'].hour
-        minute = point['Timestamp'].minute
-        time = hour + minute / 60
-        net_out_stats.append([time, point['Sum']])
-
-        net_out_stats = sorted(net_out_stats, key=itemgetter(0))
+        request_count_stats.append([time, point['Sum']])
+    request_count_stats = sorted(request_count_stats, key=itemgetter(0))
 
     return render_template("view.html", title="Instance Info",
                            instance=instance,
                            cpu_stats=cpu_stats,
-                           net_in_stats=net_in_stats,
-                           net_out_stats=net_out_stats)
+                           request_count_stats=request_count_stats)
 
 
 @bp.route('/destroy_instance/<id>', methods=['POST'])
@@ -116,16 +94,14 @@ def stop_manager():
     # Terminate all workers
     elb_client = boto3.client('elbv2')
     ec2_client = boto3.client('ec2')
-    target_groups = elb_client.describe_target_groups()['TargetGroups']
-    target_group_arn = target_groups[0]['TargetGroupArn']
 
     # Get target group instance list
-    targets = elb_client.describe_target_health(TargetGroupArn=target_group_arn)['TargetHealthDescriptions']
+    targets = elb_client.describe_target_health(TargetGroupArn=TARGET_GROUP_ARN)['TargetHealthDescriptions']
 
     for target in targets:
         instance_id = target['Target']['Id']
         elb_client.deregister_targets(
-            TargetGroupArn=target_group_arn,
+            TargetGroupArn=TARGET_GROUP_ARN,
             Targets=[
                 {
                     'Id': instance_id,
@@ -137,5 +113,5 @@ def stop_manager():
         ec2.instances.filter(InstanceIds=[instance_id]).terminate()
 
     # Stop Manager
-    # ec2_client.stop_instances(InstanceIds=[MANAGER_ID], DryRun=True)
-    return "GoodBye"
+    ec2_client.stop_instances(InstanceIds=[MANAGER_ID], DryRun=True)
+    return "Goodbye"

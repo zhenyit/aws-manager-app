@@ -35,12 +35,6 @@
                                 <input type='submit' value='Details'/>
                             </form>
                         </td>
-                        <td>
-                            <form action="{{ url_for('manager.destroy_instance',id=instance.id) }}" method='post'
-                                  onsubmit='return confirm("Are you sure?")'>
-                                <input type='submit' value='Destroy'/>
-                            </form>
-                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>

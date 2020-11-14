@@ -79,7 +79,7 @@
                             </form>
                         </td>
                         <td>
-                            <form action="{{ url_for('worker.remove_worker',id=worker_instance.id) }}" method='post'
+                            <form action="{{ url_for('load_balancer.remove_worker',id=worker_instance.id) }}" method='post'
                                   onsubmit='return confirm("Are you sure?")'>
                                 <input type='submit' value='Remove'/>
                             </form>
