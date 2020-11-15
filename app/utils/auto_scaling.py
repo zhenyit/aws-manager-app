@@ -2,6 +2,7 @@ from sqlalchemy import desc
 from app.models.configuration import Configuration
 from app import db
 from datetime import datetime, timedelta
+
 import time
 import boto3
 import os
@@ -10,11 +11,13 @@ elb_client = boto3.client('elbv2')
 cw_client = boto3.client('cloudwatch')
 ec2_resource = boto3.resource('ec2')
 
-MAXIMUN_WORKER_POOL_SIZE = os.getenv('MAXIMUN_WORKER_POOL_SIZE')
-MINIMUM_WORKER_POOL_SIZE = os.getenv('MAXIMUN_WORKER_POOL_SIZE')
 
-LAUNCH_TEMPLATE_ID = os.getenv('LAUNCH_TEMPLATE_ID')
-TARGET_GROUP_ARN = os.getenv('TARGET_GROUP_ARN')
+MAXIMUN_WORKER_POOL_SIZE = 8
+MINIMUM_WORKER_POOL_SIZE = 1
+
+LAUNCH_TEMPLATE_ID = 'lt-0359893f0160ff648'
+
+TARGET_GROUP_ARN = 'arn:aws:elasticloadbalancing:us-east-1:446845854592:targetgroup/user-app-target-group/d0bf322c6a58726b'
 
 
 def get_workers_id_list():
@@ -33,11 +36,10 @@ def get_worker_cpu_utils(instance_id):
         Namespace='AWS/EC2',
         MetricName='CPUUtilization',
         Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
-        StartTime=datetime.utcnow() - timedelta(seconds=2 * 60),
+        StartTime=datetime.utcnow() - timedelta(seconds=3 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
         Statistics=['Average'],
-        Period=30,
-        Unit='Percent'
+        Period=60
     )
 
     total_utils = 0
@@ -46,8 +48,32 @@ def get_worker_cpu_utils(instance_id):
     if 'Datapoints' in cpu_stats:
         for datapoint in cpu_stats['Datapoints']:
             total_utils += datapoint['Average']
-        avg_utils = total_utils / len(cpu_stats['Datapoints'])
+        if len(cpu_stats['Datapoints']) > 0:
+            avg_utils = total_utils / len(cpu_stats['Datapoints'])
     return avg_utils
+
+
+def launch_one_worker():
+    new_instance = ec2_resource.create_instances(
+        LaunchTemplate={'LaunchTemplateId': LAUNCH_TEMPLATE_ID},
+        MinCount=1,
+        MaxCount=1
+    )
+    new_instance_id = new_instance[0].id
+
+    # Register the new instance to target group
+    waiter = boto3.client('ec2').get_waiter('instance_running')
+    waiter.wait(InstanceIds=[new_instance_id])
+
+    elb_client.register_targets(
+        TargetGroupArn=TARGET_GROUP_ARN,
+        Targets=[
+            {
+                'Id': new_instance_id,
+                'Port': 5000
+            },
+        ]
+    )
 
 
 def launch_worker_by_ratio(ratio):
@@ -56,29 +82,15 @@ def launch_worker_by_ratio(ratio):
 
     if (curr_instance_num + new_instance_num) > MAXIMUN_WORKER_POOL_SIZE:
         new_instance_num = MAXIMUN_WORKER_POOL_SIZE - curr_instance_num
+        print("#Worker(after growing) >  Maximum pool size")
+        print(" Expand to maximum pool size")
+    else:
+        print("#Worker(after growing) <= Maximum pool size")
+        print(" Expand by ratio")
 
     for i in range(new_instance_num):
         # Launch a new instance
-        new_instance = ec2_resource.create_instances(
-            LaunchTemplate={'LaunchTemplateId': LAUNCH_TEMPLATE_ID},
-            MinCount=1,
-            MaxCount=1
-        )
-        new_instance_id = new_instance[0].id
-
-        # Register the new instance to target group
-        waiter = boto3.client('ec2').get_waiter('instance_running')
-        waiter.wait(InstanceIds=[new_instance_id])
-
-        elb_client.register_targets(
-            TargetGroupArn=TARGET_GROUP_ARN,
-            Targets=[
-                {
-                    'Id': new_instance_id,
-                    'Port': 5000
-                },
-            ]
-        )
+        launch_one_worker()
 
 
 def terminate_worker_by_ratio(ratio):
@@ -87,7 +99,12 @@ def terminate_worker_by_ratio(ratio):
     terminate_instance_num = int(curr_instance_num * (1 - ratio))
 
     if (curr_instance_num - terminate_instance_num) < MINIMUM_WORKER_POOL_SIZE:
-        terminate_instance_num = 0
+        terminate_instance_num = curr_instance_num - MINIMUM_WORKER_POOL_SIZE
+        print("#Worker(after shrinking) <  Minimum pool size")
+        print(" Shrink to minimum pool size")
+    else:
+        print("#Worker(after shrinking) >= Minimum pool size")
+        print(" Shrink by ratio")
 
     if terminate_instance_num > 0:
         for i in range(terminate_instance_num):
@@ -105,6 +122,8 @@ def terminate_worker_by_ratio(ratio):
 
             ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
 
+    print("$Terminate worker")
+
 
 if __name__ == '__main__':
     while True:
@@ -118,8 +137,11 @@ if __name__ == '__main__':
 
         if worker_num > 0:
             for worker_id in workers_id:
-                total_cpu_utils += get_worker_cpu_utils(worker_id)
+                util = get_worker_cpu_utils(worker_id)
+                total_cpu_utils = total_cpu_utils + util
             avg_cpu_utils = total_cpu_utils / worker_num
+
+        print("Average CPU utilization = {0:.2%}".format(0.01*avg_cpu_utils))
 
         # Get current config
         db.session.commit()
@@ -127,16 +149,25 @@ if __name__ == '__main__':
 
         # Scaling
         if not workers_id:
-            time.sleep(10)
-            print("no worker")
+            launch_one_worker()
+            time.sleep(100)
+            print("No worker in the pool")
+            print("$Launch one worker")
         elif avg_cpu_utils > config.grow_threshold:
             launch_worker_by_ratio(config.expand_ratio)
-            print("auto add worker")
-            time.sleep(300)
+            print("Average CPU utilization >= {0:.2%}".format(0.01 * config.grow_threshold))
+            print("$Launch worker")
+            time.sleep(120)
         elif avg_cpu_utils < config.shrink_threshold:
-            terminate_worker_by_ratio(config.shrink_ratio)
-            print("auto terminate worker")
-            time.sleep(300)
+            print("Average CPU utilization <= {0:.2%}".format(0.01 * config.shrink_threshold))
+            if len(workers_id) > MINIMUM_WORKER_POOL_SIZE:
+                terminate_worker_by_ratio(config.shrink_ratio)
+                time.sleep(120)
+            else:
+                print("#Worker not larger than minimum pool size")
+                print("$No Operation!")
+        else:
+            print("$No Operation!")
 
         time.sleep(5)
 

@@ -33,11 +33,17 @@ def get_details(id):
     cpu = cw_client.get_metric_statistics(
         Namespace='AWS/EC2',
         MetricName='CPUUtilization',
-        Dimensions=[{'Name': 'InstanceId', 'Value': id}],
+        Dimensions=[
+            {
+                'Name': 'InstanceId',
+                'Value': id
+            }
+        ],
         Statistics=['Average'],
         StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
-        Period=60
+        Period=60,
+        Unit='Percent'
     )
 
     cpu_stats = []
@@ -49,23 +55,20 @@ def get_details(id):
     cpu_stats = sorted(cpu_stats, key=itemgetter(0))
 
     request_count = cw_client.get_metric_statistics(
-        Namespace='AWS/ApplicationELB',
-        MetricName='RequestCountPerTarget',
+        Namespace='AWS/EC2',
+        MetricName='HttpRequestCount',
         Dimensions=[
             {
-                'Name': 'LoadBalancer',
-                'Value': LOAD_BALANCER
-            },
-            {
-                'Name': 'TargetGroup',
-                'Value': TARGET_GROUP
+                'Name': 'InstanceID',
+                'Value': 'i-02e7ced1f9e41c7cd'
             }
         ],
         Statistics=['Sum'],
-        StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
+        StartTime=datetime.utcnow() - timedelta(seconds=60 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
         Period=60
     )
+    print(request_count)
 
     request_count_stats = []
 
@@ -113,5 +116,5 @@ def stop_manager():
         ec2.instances.filter(InstanceIds=[instance_id]).terminate()
 
     # Stop Manager
-    ec2_client.stop_instances(InstanceIds=[MANAGER_ID], DryRun=True)
+    ec2_client.stop_instances(InstanceIds=[MANAGER_ID])
     return "Goodbye"

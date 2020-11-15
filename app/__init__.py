@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 
 # Init Flask application object
 app = Flask(__name__)
@@ -9,6 +10,8 @@ app.config.from_object('app.settings')
 db = SQLAlchemy()
 db.app = app
 db.init_app(app)
+
+load_dotenv()
 
 # Register all blueprints
 from .controllers import manager

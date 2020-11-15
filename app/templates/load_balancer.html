@@ -28,13 +28,13 @@
             <div class="row">
                 <div style="margin: 5px 0">
                     <form action="{{ url_for('load_balancer.shrink_pool') }}" method="post">
-                        <input type="submit" class="btn btn-outline-primary" value="Shrink worker pool">
+                        <input type="submit" class="btn btn-outline-primary" value="Shrink worker pool size">
                     </form>
                 </div>
 
                 <div style="margin: 5px 5px">
                     <form action="{{ url_for('load_balancer.expand_pool') }}" method="post">
-                        <input type="submit" class="btn btn-outline-primary" value="Expand worker pool">
+                        <input type="submit" class="btn btn-outline-primary" value="Expand worker pool size">
                     </form>
                 </div>
             </div>
@@ -49,6 +49,7 @@
         <div class="col">
             <h3>#Worker Graph</h3>
             <div id="worker_plot" style="width:300px;height:150px"></div>
+             <p style="font-size: 10px">* It may take a few seconds to update the graph, if you just add/delete a worker.</p>
         </div>
     </div>
 

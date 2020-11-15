@@ -4,11 +4,12 @@ import boto3
 import os
 from datetime import datetime, timedelta
 from operator import itemgetter
+import time
 
 bp = Blueprint('load_balancer', __name__, template_folder='../templates')
 
-MAXIMUN_WORKER_POOL_SIZE = os.getenv('MAXIMUN_WORKER_POOL_SIZE')
-MINIMUM_WORKER_POOL_SIZE = os.getenv('MINIMUM_WORKER_POOL_SIZE')
+MAXIMUN_WORKER_POOL_SIZE = int(os.getenv('MAXIMUN_WORKER_POOL_SIZE'))
+MINIMUM_WORKER_POOL_SIZE = int(os.getenv('MINIMUM_WORKER_POOL_SIZE'))
 LAUNCH_TEMPLATE_ID = os.getenv('LAUNCH_TEMPLATE_ID')
 LOAD_BALANCER = os.getenv('LOAD_BALANCER')
 TARGET_GROUP_ARN = os.getenv('TARGET_GROUP_ARN')
@@ -98,35 +99,50 @@ def get_worker_num_graph(cw_client):
 @bp.route('/shrink_pool', methods=['POST'])
 def shrink_pool():
     global MAXIMUN_WORKER_POOL_SIZE
-    MAXIMUN_WORKER_POOL_SIZE -= 1
+    MAXIMUN_WORKER_POOL_SIZE = MAXIMUN_WORKER_POOL_SIZE - 1
     return redirect(url_for('load_balancer.get_workers'))
 
 
 @bp.route('/expand_pool', methods=['POST'])
 def expand_pool():
     global MAXIMUN_WORKER_POOL_SIZE
-    MAXIMUN_WORKER_POOL_SIZE += 1
+    MAXIMUN_WORKER_POOL_SIZE = MAXIMUN_WORKER_POOL_SIZE + 1
     return redirect(url_for('load_balancer.get_workers'))
 
 
 @bp.route('/add_worker', methods=['POST'])
 def add_worker():
     ec2_resource = boto3.resource('ec2')
+
     # Launch a new user-app worker
     new_instance = ec2_resource.create_instances(LaunchTemplate={'LaunchTemplateId': LAUNCH_TEMPLATE_ID},
                                                  MinCount=1, MaxCount=1)
     new_instance_id = new_instance[0].id
 
+    time.sleep(6)
+
+    return render_template("success.html", id=new_instance_id)
+
+
+@bp.route('/register_new_worker/<id>', methods=['GET'])
+def register_new_worker(id):
     # Register the new instance to target group
-    waiter = boto3.client('ec2').get_waiter('instance_running')
-    waiter.wait(InstanceIds=[new_instance_id])
     elb_client = boto3.client('elbv2')
+
+    waiter = boto3.client('ec2').get_waiter('instance_running')
+    waiter.wait(
+        InstanceIds=[id],
+        WaiterConfig={
+            'Delay': 2,
+            'MaxAttempts': 50
+        }
+    )
 
     elb_client.register_targets(
         TargetGroupArn=TARGET_GROUP_ARN,
         Targets=[
             {
-                'Id': new_instance_id,
+                'Id': id,
                 'Port': 5000
             },
         ]

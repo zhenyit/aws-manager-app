@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWS Manager</title>
+</head>
+<body>
+<h3>Successfully added worker</h3>
+<form action='{{ url_for('load_balancer.register_new_worker', id=id) }}' method='get'>
+    <input type='submit' value='Register new instance to load balancer'/>
+</form>
+</body>
+</html>
