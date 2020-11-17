@@ -1,3 +1,5 @@
+import datetime
+
 from app import db
 
 class Configuration(db.Model):
@@ -11,3 +13,13 @@ class Configuration(db.Model):
 
     def __repr__(self):
         return '<Configuration {}>'.format(self.id)
+        
+
+class HttpRequestCount(db.Model):
+    __tablename__ = 'http_request_count'
+    id = db.Column(db.Integer, primary_key=True)
+    instance_id = db.Column(db.String(64))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow) 
+    
+    def __repr__(self):
+        return "<HttpRequestCount %r>" % self.id

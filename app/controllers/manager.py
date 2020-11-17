@@ -2,8 +2,13 @@ from flask import Blueprint, render_template
 from flask import request, flash, redirect, url_for
 import boto3
 import os
+import collections
 from datetime import datetime, timedelta
 from operator import itemgetter
+
+from app import db
+from ..models.configuration import HttpRequestCount
+from ..settings import BUCKET_NAME
 
 
 bp = Blueprint('manager', __name__, template_folder='../templates')
@@ -22,6 +27,15 @@ def get_instances():
     return render_template("instances.html", title="EC2 Manager", instances=instances)
 
 
+@bp.route('/test', methods=['GET'])
+def test():
+
+    cw_client = boto3.client('cloudwatch')
+    
+
+    return "success"
+    
+
 @bp.route('/get_details/<id>', methods=['GET'])
 def get_details(id):
     ec2 = boto3.resource('ec2')
@@ -33,17 +47,11 @@ def get_details(id):
     cpu = cw_client.get_metric_statistics(
         Namespace='AWS/EC2',
         MetricName='CPUUtilization',
-        Dimensions=[
-            {
-                'Name': 'InstanceId',
-                'Value': id
-            }
-        ],
+        Dimensions=[{'Name': 'InstanceId', 'Value': id}],
         Statistics=['Average'],
         StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
-        Period=60,
-        Unit='Percent'
+        Period=60
     )
 
     cpu_stats = []
@@ -54,21 +62,59 @@ def get_details(id):
         cpu_stats.append([time, point['Average']])
     cpu_stats = sorted(cpu_stats, key=itemgetter(0))
 
+    # Get http request data
+    start_time = datetime.utcnow() - timedelta(seconds=30 * 60)
+    start_timestamp = int(round(datetime.timestamp(start_time)))
+
+    end_time = datetime.utcnow()
+    end_timestamp = int(round(datetime.timestamp(end_time)))
+    
+    http_stats = HttpRequestCount.query.filter(HttpRequestCount.instance_id == id)\
+                    .filter(HttpRequestCount.created_at >= start_time)\
+                    .filter(HttpRequestCount.created_at <= end_time)\
+                    .with_entities(HttpRequestCount.created_at).all()
+    
+    metric_data = []
+    
+    timestamps = list(map(lambda x: int(round(datetime.timestamp(x[0]))), http_stats))
+    timestamps_dict = collections.Counter(timestamps)
+    for minute_start_time in range(start_timestamp, end_timestamp, 120):
+        http_req_per_minute = 0
+        for second in range(minute_start_time, minute_start_time + 120):
+            http_req_per_minute += timestamps_dict[second]
+        metric_data.append({
+                'MetricName': 'HttpRequestCount',
+                'Dimensions': [
+                    {
+                        'Name': 'InstanceID',
+                        'Value': id
+                    },
+                ],
+                'Timestamp': datetime.fromtimestamp(minute_start_time),
+                'Value': http_req_per_minute,
+                'Unit': 'Count',
+                'StorageResolution': 60,
+            })
+
+    cw_client.put_metric_data(
+        Namespace='AWS/EC2',
+        MetricData=metric_data
+    )
+    
     request_count = cw_client.get_metric_statistics(
         Namespace='AWS/EC2',
         MetricName='HttpRequestCount',
         Dimensions=[
             {
                 'Name': 'InstanceID',
-                'Value': 'i-02e7ced1f9e41c7cd'
+                'Value': id
             }
         ],
-        Statistics=['Sum'],
-        StartTime=datetime.utcnow() - timedelta(seconds=60 * 60),
+        Statistics=['Average'],
+        StartTime=datetime.utcnow() - timedelta(seconds=30 * 60),
         EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
         Period=60
     )
-    print(request_count)
 
     request_count_stats = []
 
@@ -76,13 +122,14 @@ def get_details(id):
         hour = point['Timestamp'].hour
         minute = point['Timestamp'].minute
         time = hour + minute / 60
-        request_count_stats.append([time, point['Sum']])
+        request_count_stats.append([time, point['Average']])
     request_count_stats = sorted(request_count_stats, key=itemgetter(0))
 
     return render_template("view.html", title="Instance Info",
                            instance=instance,
                            cpu_stats=cpu_stats,
                            request_count_stats=request_count_stats)
+
 
 
 @bp.route('/destroy_instance/<id>', methods=['POST'])
@@ -118,3 +165,17 @@ def stop_manager():
     # Stop Manager
     ec2_client.stop_instances(InstanceIds=[MANAGER_ID])
     return "Goodbye"
+
+
+@bp.route('/delete_all_data', methods=['POST'])
+def delete_all_data():
+    # delete S3
+    s3_client = boto3.resource('s3')
+    bucket = s3_client.Bucket(BUCKET_NAME)
+    bucket.objects.delete()
+
+    # delete RDS
+    db.drop_all()
+
+    flash("All data deleted successfully")
+    return redirect(url_for('get_instances'))

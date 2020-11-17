@@ -1,4 +1,5 @@
 from sqlalchemy import desc
+from ..models
 from app.models.configuration import Configuration
 from app import db
 from datetime import datetime, timedelta
@@ -153,6 +154,9 @@ if __name__ == '__main__':
             time.sleep(100)
             print("No worker in the pool")
             print("$Launch one worker")
+        elif not config:
+            print("No Auto scaling configuration")
+            print("$No Operation!")
         elif avg_cpu_utils > config.grow_threshold:
             launch_worker_by_ratio(config.expand_ratio)
             print("Average CPU utilization >= {0:.2%}".format(0.01 * config.grow_threshold))
